@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard IMD Valencia - Análisis de Tráfico</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <i class="fas fa-chart-line"></i>
+                <h1>Dashboard IMD Valencia</h1>
+            </div>
+            <div class="nav-controls">
+                <button class="theme-toggle" id="themeToggle" title="Cambiar tema">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <button class="export-btn" id="exportBtn">
+                    <i class="fas fa-download"></i> Exportar
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Sidebar Filtros -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>Filtros</h2>
+            </div>
+            
+            <div class="filter-group">
+                <label>Buscar Calle/Zona</label>
+                <input type="text" id="searchInput" placeholder="Ej: Gran Vía..." class="filter-input">
+            </div>
+
+            <div class="filter-group">
+                <label>Rango de Fechas</label>
+                <input type="date" id="startDate" class="filter-input">
+                <input type="date" id="endDate" class="filter-input">
+            </div>
+
+            <div class="filter-group">
+                <label>Tipo de Vehículo</label>
+                <select id="vehicleType" class="filter-input">
+                    <option value="all">Todos</option>
+                    <option value="cars">Automóviles</option>
+                    <option value="trucks">Camiones</option>
+                    <option value="motorcycles">Motocicletas</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label>Estado del Tráfico</label>
+                <div class="checkbox-group">
+                    <label><input type="checkbox" value="fluido" checked> Fluido</label>
+                    <label><input type="checkbox" value="denso" checked> Denso</label>
+                    <label><input type="checkbox" value="congestionado" checked> Congestionado</label>
+                    <label><input type="checkbox" value="cortado" checked> Cortado</label>
+                </div>
+            </div>
+
+            <button class="apply-filters-btn" id="applyFilters">Aplicar Filtros</button>
+            <button class="reset-filters-btn" id="resetFilters">Limpiar</button>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- KPIs -->
+            <section class="kpi-section">
+                <div class="kpi-card">
+                    <div class="kpi-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                        <i class="fas fa-car"></i>
+                    </div>
+                    <div class="kpi-content">
+                        <h3>Promedio Diario</h3>
+                        <p class="kpi-value" id="avgValue">2,450</p>
+                        <span class="kpi-unit">vehículos/día</span>
+                    </div>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                        <i class="fas fa-arrow-up"></i>
+                    </div>
+                    <div class="kpi-content">
+                        <h3>Pico Máximo</h3>
+                        <p class="kpi-value" id="maxValue">5,890</p>
+                        <span class="kpi-unit">vehículos/día</span>
+                    </div>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                        <i class="fas fa-arrow-down"></i>
+                    </div>
+                    <div class="kpi-content">
+                        <h3>Mínimo Registrado</h3>
+                        <p class="kpi-value" id="minValue">850</p>
+                        <span class="kpi-unit">vehículos/día</span>
+                    </div>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-icon" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+                        <i class="fas fa-traffic-light"></i>
+                    </div>
+                    <div class="kpi-content">
+                        <h3>Estado Actual</h3>
+                        <p class="kpi-value" id="statusValue">Fluido</p>
+                        <span class="kpi-unit">en tiempo real</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Charts Section -->
+            <section class="charts-section">
+                <div class="chart-container">
+                    <h2>Tendencia de Tráfico</h2>
+                    <canvas id="trendChart"></canvas>
+                </div>
+
+                <div class="chart-container">
+                    <h2>Distribución por Hora</h2>
+                    <canvas id="hourlyChart"></canvas>
+                </div>
+            </section>
+
+            <!-- Map Section -->
+            <section class="map-section">
+                <h2>Mapa de Intensidad - Valencia</h2>
+                <div id="map" class="map-container"></div>
+            </section>
+
+            <!-- Comparison Section -->
+            <section class="comparison-section">
+                <h2>Comparativa de Calles</h2>
+                <canvas id="comparisonChart"></canvas>
+            </section>
+
+            <!-- Data Table -->
+            <section class="table-section">
+                <h2>Detalle de Datos</h2>
+                <div class="table-container">
+                    <table id="dataTable">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Calle/Zona</th>
+                                <th>IMD (veh/día)</th>
+                                <th>Estado</th>
+                                <th>Automóviles</th>
+                                <th>Camiones</th>
+                                <th>Motos</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody">
+                            <!-- Populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Statistics Section -->
+            <section class="stats-section">
+                <h2>Estadísticas Generales</h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h3>Total Registros</h3>
+                        <p id="totalRecords">0</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Zonas Monitoreadas</h3>
+                        <p id="totalZones">0</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Tráfico Promedio Semanal</h3>
+                        <p id="weeklyAvg">0</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Variación (%)</h3>
+                        <p id="variation">0%</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Info Section -->
+            <section class="info-section">
+                <h2>Información y Fuentes</h2>
+                <div class="info-box">
+                    <h3>Sobre este Dashboard</h3>
+                    <p>
+                        Este dashboard muestra el <strong>Índice Medio Diario de Vehículos (IMD)</strong> en las calles de Valencia.
+                        Los datos provienen de fuentes públicas del Ayuntamiento de Valencia y portales de datos abiertos.
+                    </p>
+                    <h3>Fuentes de Datos</h3>
+                    <ul>
+                        <li><a href="https://valencia.opendatasoft.com/" target="_blank">Valencia OpenDataSoft</a></li>
+                        <li><a href="https://datos.gob.es/" target="_blank">datos.gob.es</a></li>
+                        <li><a href="https://www.icv.gva.es/" target="_blank">Institut Cartogràfic Valencià</a></li>
+                    </ul>
+                    <h3>Limitaciones</h3>
+                    <p>
+                        Este dashboard utiliza datos sintéticos de demostración. 
+                        Para datos oficiales y actuales, consulta directamente los portales públicos del Ayuntamiento.
+                    </p>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+    <script src="config.js"></script>
+    <script src="data.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
