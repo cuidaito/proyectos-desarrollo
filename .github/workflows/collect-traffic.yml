@@ -1,0 +1,33 @@
+name: Capturar tráfico Valencia
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: collect-traffic
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Capturar datos
+        run: python3 proyecto-02-dashboard-imd-valencia/scripts/collect.py
+
+      - name: Guardar histórico
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add proyecto-02-dashboard-imd-valencia/data
+          git commit -m "data: captura de tráfico $(date -u +%Y-%m-%dT%H:%MZ)" || exit 0
+          git pull --rebase origin main
+          git push origin main

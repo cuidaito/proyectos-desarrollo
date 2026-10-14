@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard IMD Valencia - Análisis de Tráfico</title>
+    <title>Tráfico en tiempo real - Valencia</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -14,9 +14,13 @@
         <div class="nav-container">
             <div class="nav-brand">
                 <i class="fas fa-chart-line"></i>
-                <h1>Dashboard IMD Valencia</h1>
+                <h1>Tráfico Valencia</h1>
             </div>
             <div class="nav-controls">
+                <div class="last-update" id="lastUpdate">
+                    <span>Datos en directo: <strong id="liveUpdate">cargando…</strong></span>
+                    <span>Última captura del histórico: <strong id="historyUpdate">-</strong></span>
+                </div>
                 <button class="theme-toggle" id="themeToggle" title="Cambiar tema">
                     <i class="fas fa-moon"></i>
                 </button>
@@ -36,8 +40,10 @@
             </div>
             
             <div class="filter-group">
-                <label>Buscar tramo</label>
-                <input type="text" id="searchInput" placeholder="Ej: Sagunto..." class="filter-input">
+                <label for="tramoSelect">Tramo</label>
+                <select id="tramoSelect" class="filter-input">
+                    <option value="all">Todos los tramos</option>
+                </select>
             </div>
 
             <div class="filter-group">
@@ -104,7 +110,7 @@
                     <div class="kpi-content">
                         <h3>Tramos Monitorizados</h3>
                         <p class="kpi-value" id="statusValue">-</p>
-                        <span class="kpi-unit" id="updatedAt">cargando…</span>
+                        <span class="kpi-unit" id="updatedAt">en directo</span>
                     </div>
                 </div>
             </section>
@@ -126,6 +132,20 @@
             <section class="map-section">
                 <h2>Mapa de Intensidad en Tiempo Real - Valencia</h2>
                 <div id="map" class="map-container"></div>
+            </section>
+
+            <!-- History Section -->
+            <section class="history-section">
+                <div class="section-header">
+                    <h2 id="historyTitle">Histórico de intensidad</h2>
+                    <select id="historyRange" class="filter-input">
+                        <option value="1">Último día</option>
+                        <option value="7" selected>Últimos 7 días</option>
+                        <option value="30">Últimos 30 días</option>
+                    </select>
+                </div>
+                <p class="history-note" id="historyNote"></p>
+                <canvas id="historyChart"></canvas>
             </section>
 
             <!-- Comparison Section -->
