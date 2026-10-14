@@ -1,5 +1,20 @@
 # Dashboard en un NAS QNAP (web y datos locales)
 
+## Opción A (recomendada): contenedor Docker
+
+Una sola imagen con nginx (web) y la captura cada 15 minutos (`INTERVAL_SECONDS`). Los datos se guardan en un volumen.
+
+Construir y exportar la imagen (desde esta carpeta; `linux/amd64` para la mayoría de QNAP, `linux/arm64` para modelos ARM):
+```sh
+docker build --platform linux/amd64 -t trafico-valencia:latest .
+docker save trafico-valencia:latest -o trafico-valencia-amd64.tar
+```
+En el QNAP: *Container Station → Imágenes → Importar* el `.tar`. Después crea el contenedor con puerto `8080 → 80`, reinicio automático y un volumen de una carpeta del NAS montada en `/usr/share/nginx/html/data` (ahí queda el histórico). O con `docker-compose.yml` (*Aplicaciones → Crear*), cambiando `build: .` por la imagen importada.
+
+La web queda en `http://IP-DEL-NAS:8080/`. Con otra arquitectura, genera la imagen con la plataforma adecuada.
+
+## Opción B: sin Docker
+
 La web se sirve desde el NAS y el histórico se guarda en una carpeta del NAS. GitHub solo guarda el código.
 Fuera de `github.io`, el dashboard lee el histórico de `data/` junto a `index.html`.
 
