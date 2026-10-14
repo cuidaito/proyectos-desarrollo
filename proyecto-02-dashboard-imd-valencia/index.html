@@ -115,23 +115,23 @@
                 </div>
             </section>
 
-            <!-- Charts Section -->
-            <section class="charts-section">
-                <div class="chart-container">
-                    <h2>Estado del Tráfico</h2>
-                    <canvas id="trendChart"></canvas>
-                </div>
-
-                <div class="chart-container">
-                    <h2>Distribución por Intensidad</h2>
-                    <canvas id="hourlyChart"></canvas>
-                </div>
-            </section>
-
             <!-- Map Section -->
             <section class="map-section">
                 <h2>Mapa de Intensidad en Tiempo Real - Valencia</h2>
                 <div id="map" class="map-container"></div>
+            </section>
+
+            <!-- Charts Section -->
+            <section class="charts-section">
+                <div class="chart-container">
+                    <h2>Estado del Tráfico</h2>
+                    <div class="chart-box"><canvas id="trendChart"></canvas></div>
+                </div>
+
+                <div class="chart-container">
+                    <h2>Distribución por Intensidad</h2>
+                    <div class="chart-box"><canvas id="hourlyChart"></canvas></div>
+                </div>
             </section>
 
             <!-- History Section -->
@@ -145,13 +145,13 @@
                     </select>
                 </div>
                 <p class="history-note" id="historyNote"></p>
-                <canvas id="historyChart"></canvas>
+                <div class="chart-box"><canvas id="historyChart"></canvas></div>
             </section>
 
             <!-- Comparison Section -->
             <section class="comparison-section">
                 <h2>Top 15 Tramos con Más Tráfico</h2>
-                <canvas id="comparisonChart"></canvas>
+                <div class="chart-box"><canvas id="comparisonChart"></canvas></div>
             </section>
 
             <!-- Data Table -->
