@@ -1,0 +1,37 @@
+{
+  "source": "Datos de ejemplo para demostración; no son mediciones oficiales",
+  "stations": [
+    { "id": "v-01", "name": "Av. del Cid", "zone": "Oeste", "lat": 39.4666, "lng": -0.4051, "imd": 28500 },
+    { "id": "v-02", "name": "Av. de les Corts Valencianes", "zone": "Noroeste", "lat": 39.4955, "lng": -0.3998, "imd": 32100 },
+    { "id": "v-03", "name": "Gran Via del Marqués del Túria", "zone": "Eixample", "lat": 39.4683, "lng": -0.3705, "imd": 19800 },
+    { "id": "v-04", "name": "Av. del Primat Reig", "zone": "Este", "lat": 39.4822, "lng": -0.3652, "imd": 17400 },
+    { "id": "v-05", "name": "Av. Ausiàs March", "zone": "Sur", "lat": 39.4521, "lng": -0.3698, "imd": 24600 },
+    { "id": "v-06", "name": "Av. del Port", "zone": "Marítim", "lat": 39.4634, "lng": -0.3454, "imd": 21300 }
+  ],
+  "readings": [
+    { "stationId": "v-01", "date": "2025-06-02", "imd": 27700 },
+    { "stationId": "v-01", "date": "2025-06-09", "imd": 28100 },
+    { "stationId": "v-01", "date": "2025-06-16", "imd": 28900 },
+    { "stationId": "v-01", "date": "2025-06-23", "imd": 28500 },
+    { "stationId": "v-02", "date": "2025-06-02", "imd": 31400 },
+    { "stationId": "v-02", "date": "2025-06-09", "imd": 31900 },
+    { "stationId": "v-02", "date": "2025-06-16", "imd": 32600 },
+    { "stationId": "v-02", "date": "2025-06-23", "imd": 32100 },
+    { "stationId": "v-03", "date": "2025-06-02", "imd": 19400 },
+    { "stationId": "v-03", "date": "2025-06-09", "imd": 19700 },
+    { "stationId": "v-03", "date": "2025-06-16", "imd": 20100 },
+    { "stationId": "v-03", "date": "2025-06-23", "imd": 19800 },
+    { "stationId": "v-04", "date": "2025-06-02", "imd": 16900 },
+    { "stationId": "v-04", "date": "2025-06-09", "imd": 17300 },
+    { "stationId": "v-04", "date": "2025-06-16", "imd": 17900 },
+    { "stationId": "v-04", "date": "2025-06-23", "imd": 17400 },
+    { "stationId": "v-05", "date": "2025-06-02", "imd": 23800 },
+    { "stationId": "v-05", "date": "2025-06-09", "imd": 24200 },
+    { "stationId": "v-05", "date": "2025-06-16", "imd": 24900 },
+    { "stationId": "v-05", "date": "2025-06-23", "imd": 24600 },
+    { "stationId": "v-06", "date": "2025-06-02", "imd": 20700 },
+    { "stationId": "v-06", "date": "2025-06-09", "imd": 21100 },
+    { "stationId": "v-06", "date": "2025-06-16", "imd": 21600 },
+    { "stationId": "v-06", "date": "2025-06-23", "imd": 21300 }
+  ]
+}
