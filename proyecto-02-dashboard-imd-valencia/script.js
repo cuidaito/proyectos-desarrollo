@@ -1,19 +1,45 @@
 (function () {
     const $ = id => document.getElementById(id);
     const fmt = n => Math.round(n).toLocaleString('es-ES');
-    let filtered = TRAFFIC_DATA.slice();
-    let trendChart, hourlyChart, comparisonChart, map, markersLayer;
+    const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const STATE_ORDER = ['fluido', 'denso', 'congestionado', 'cortado', 'sin datos'];
+    let all = [];
+    let filtered = [];
+    let statusChart, intensityChart, topChart, map, layer;
+
+    function parse(geojson) {
+        return geojson.features.map(f => {
+            const p = f.properties;
+            const imv = /^\d+$/.test(p.imv || '') ? parseInt(p.imv, 10) : null;
+            const state = CONFIG.states[p.estado] || 'sin datos';
+            return {
+                id: p.idtramo,
+                name: p.des_tramo || p.idtramo,
+                imv,
+                state: imv === null ? 'sin datos' : state,
+                geometry: f.geometry
+            };
+        });
+    }
+
+    async function load() {
+        try {
+            const res = await fetch(CONFIG.apiUrl);
+            if (!res.ok) throw new Error(res.status);
+            all = parse(await res.json());
+            $('updatedAt').textContent = 'actualizado ' + new Date().toLocaleTimeString('es-ES');
+            applyFilters();
+        } catch (e) {
+            $('updatedAt').textContent = 'error al cargar datos';
+        }
+    }
 
     function init() {
-        const dates = TRAFFIC_DATA.map(r => r.date).sort();
-        $('startDate').value = dates[0];
-        $('endDate').value = dates[dates.length - 1];
-
         map = L.map('map').setView(CONFIG.mapCenter, CONFIG.mapZoom);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; OpenStreetMap contributors'
         }).addTo(map);
-        markersLayer = L.layerGroup().addTo(map);
+        layer = L.layerGroup().addTo(map);
 
         $('applyFilters').addEventListener('click', applyFilters);
         $('resetFilters').addEventListener('click', resetFilters);
@@ -21,74 +47,51 @@
         $('themeToggle').addEventListener('click', toggleTheme);
         $('searchInput').addEventListener('keydown', e => { if (e.key === 'Enter') applyFilters(); });
 
-        render();
-    }
-
-    function selectedStates() {
-        return Array.from(document.querySelectorAll('.checkbox-group input:checked')).map(c => c.value);
+        load();
+        setInterval(load, CONFIG.refreshMs);
     }
 
     function applyFilters() {
         const q = $('searchInput').value.trim().toLowerCase();
-        const start = $('startDate').value;
-        const end = $('endDate').value;
-        const states = selectedStates();
-        filtered = TRAFFIC_DATA.filter(r =>
-            (!q || r.street.toLowerCase().includes(q)) &&
-            (!start || r.date >= start) &&
-            (!end || r.date <= end) &&
-            states.includes(r.status));
+        const min = parseInt($('minIntensity').value, 10) || 0;
+        const states = Array.from(document.querySelectorAll('.checkbox-group input:checked')).map(c => c.value);
+        filtered = all.filter(r =>
+            (!q || r.name.toLowerCase().includes(q)) &&
+            states.includes(r.state) &&
+            (min === 0 || (r.imv !== null && r.imv >= min)));
         render();
     }
 
     function resetFilters() {
         $('searchInput').value = '';
-        $('vehicleType').value = 'all';
+        $('minIntensity').value = 0;
         document.querySelectorAll('.checkbox-group input').forEach(c => (c.checked = true));
-        const dates = TRAFFIC_DATA.map(r => r.date).sort();
-        $('startDate').value = dates[0];
-        $('endDate').value = dates[dates.length - 1];
         applyFilters();
     }
 
-    function value(r) {
-        switch ($('vehicleType').value) {
-            case 'cars': return r.cars;
-            case 'trucks': return r.trucks;
-            case 'motorcycles': return r.motorcycles;
-            default: return r.imd;
-        }
-    }
-
-    function groupBy(rows, keyFn) {
-        const m = new Map();
-        rows.forEach(r => {
-            const k = keyFn(r);
-            if (!m.has(k)) m.set(k, []);
-            m.get(k).push(r);
-        });
-        return m;
-    }
-
-    const avg = arr => (arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0);
+    const withData = () => filtered.filter(r => r.imv !== null);
 
     function render() {
         renderKPIs();
-        renderTrend();
-        renderHourly();
+        renderStatus();
+        renderIntensity();
         renderMap();
-        renderComparison();
+        renderTop();
         renderTable();
         renderStats();
     }
 
     function renderKPIs() {
-        const vals = filtered.map(value);
-        $('avgValue').textContent = vals.length ? fmt(avg(vals)) : '-';
-        $('maxValue').textContent = vals.length ? fmt(Math.max(...vals)) : '-';
-        $('minValue').textContent = vals.length ? fmt(Math.min(...vals)) : '-';
-        const last = filtered.length ? filtered[filtered.length - 1].status : '-';
-        $('statusValue').textContent = last.charAt(0).toUpperCase() + last.slice(1);
+        const d = withData();
+        const vals = d.map(r => r.imv);
+        $('avgValue').textContent = vals.length ? fmt(vals.reduce((a, b) => a + b, 0) / vals.length) : '-';
+        const max = d.reduce((m, r) => (!m || r.imv > m.imv ? r : m), null);
+        const min = d.reduce((m, r) => (!m || r.imv < m.imv ? r : m), null);
+        $('maxValue').textContent = max ? fmt(max.imv) : '-';
+        $('minValue').textContent = min ? fmt(min.imv) : '-';
+        $('maxValue').title = max ? max.name : '';
+        $('minValue').title = min ? min.name : '';
+        $('statusValue').textContent = fmt(all.length);
     }
 
     function replaceChart(chart, id, config) {
@@ -96,105 +99,90 @@
         return new Chart($(id), config);
     }
 
-    function renderTrend() {
-        const byDate = [...groupBy(filtered, r => r.date)].sort((a, b) => a[0].localeCompare(b[0]));
-        trendChart = replaceChart(trendChart, 'trendChart', {
-            type: 'line',
+    function renderStatus() {
+        const counts = STATE_ORDER.map(s => filtered.filter(r => r.state === s).length);
+        statusChart = replaceChart(statusChart, 'trendChart', {
+            type: 'doughnut',
             data: {
-                labels: byDate.map(([d]) => d),
-                datasets: [{
-                    label: 'IMD medio',
-                    data: byDate.map(([, rows]) => Math.round(avg(rows.map(value)))),
-                    borderColor: '#667eea',
-                    backgroundColor: 'rgba(102,126,234,0.15)',
-                    fill: true,
-                    tension: 0.3
-                }]
+                labels: STATE_ORDER,
+                datasets: [{ data: counts, backgroundColor: STATE_ORDER.map(s => CONFIG.colors[s]) }]
             }
         });
     }
 
-    // Perfil horario ilustrativo: reparte la media diaria con una curva típica de tráfico urbano
-    function renderHourly() {
-        const profile = [1, 0.6, 0.4, 0.4, 0.8, 2, 5, 8, 7, 5, 4.5, 5, 5.5, 5.5, 5, 5, 5.5, 7, 8, 6, 4, 3, 2, 1.5];
-        const total = profile.reduce((a, b) => a + b, 0);
-        const dailyAvg = avg(filtered.map(value));
-        hourlyChart = replaceChart(hourlyChart, 'hourlyChart', {
+    function renderIntensity() {
+        const bins = [[0, 250], [250, 500], [500, 1000], [1000, 2000], [2000, 4000], [4000, Infinity]];
+        const labels = bins.map(([a, b]) => (b === Infinity ? `>${a}` : `${a}-${b}`));
+        const d = withData();
+        intensityChart = replaceChart(intensityChart, 'hourlyChart', {
             type: 'bar',
             data: {
-                labels: profile.map((_, h) => `${String(h).padStart(2, '0')}h`),
+                labels,
                 datasets: [{
-                    label: 'Vehículos (estimado)',
-                    data: profile.map(p => Math.round(dailyAvg * p / total)),
+                    label: 'Nº de tramos (veh/h)',
+                    data: bins.map(([a, b]) => d.filter(r => r.imv >= a && r.imv < b).length),
                     backgroundColor: '#764ba2'
                 }]
             }
         });
     }
 
+    function colorFor(r) {
+        if (r.imv === null) return CONFIG.colors['sin datos'];
+        if (r.state !== 'fluido') return CONFIG.colors[r.state];
+        return r.imv > 2000 ? '#e67e22' : r.imv > 1000 ? '#f1c40f' : CONFIG.colors.fluido;
+    }
+
     function renderMap() {
-        markersLayer.clearLayers();
-        const byStreet = groupBy(filtered, r => r.street);
-        byStreet.forEach(rows => {
-            const m = avg(rows.map(value));
-            const worst = rows[rows.length - 1].status;
-            L.circleMarker([rows[0].lat, rows[0].lng], {
-                radius: Math.max(6, m / 250),
-                color: CONFIG.colors[worst],
-                fillColor: CONFIG.colors[worst],
-                fillOpacity: 0.6
-            }).bindPopup(`<strong>${rows[0].street}</strong><br>IMD medio: ${fmt(m)}<br>Estado: ${worst}`)
-                .addTo(markersLayer);
+        layer.clearLayers();
+        filtered.forEach(r => {
+            if (!r.geometry || r.geometry.type !== 'LineString') return;
+            const latlngs = r.geometry.coordinates.map(([lng, lat]) => [lat, lng]);
+            L.polyline(latlngs, { color: colorFor(r), weight: 5, opacity: 0.85 })
+                .bindPopup(`<strong>${esc(r.name)}</strong><br>Intensidad: ${r.imv === null ? 'sin datos' : fmt(r.imv) + ' veh/h'}<br>Estado: ${r.state}`)
+                .addTo(layer);
         });
     }
 
-    function renderComparison() {
-        const byStreet = [...groupBy(filtered, r => r.street)]
-            .map(([s, rows]) => [s, avg(rows.map(value))])
-            .sort((a, b) => b[1] - a[1]);
-        comparisonChart = replaceChart(comparisonChart, 'comparisonChart', {
+    function renderTop() {
+        const top = withData().slice().sort((a, b) => b.imv - a.imv).slice(0, 15);
+        topChart = replaceChart(topChart, 'comparisonChart', {
             type: 'bar',
             data: {
-                labels: byStreet.map(([s]) => s),
-                datasets: [{ label: 'IMD medio', data: byStreet.map(([, v]) => Math.round(v)), backgroundColor: '#4facfe' }]
+                labels: top.map(r => r.name),
+                datasets: [{ label: 'Intensidad (veh/h)', data: top.map(r => r.imv), backgroundColor: '#4facfe' }]
             },
             options: { indexAxis: 'y' }
         });
     }
 
     function renderTable() {
-        const rows = filtered.slice().reverse().slice(0, 200);
+        const rows = filtered.slice().sort((a, b) => (b.imv ?? -1) - (a.imv ?? -1));
         $('tableBody').innerHTML = rows.map(r => `
             <tr>
-                <td>${r.date}</td>
-                <td>${r.street}</td>
-                <td>${fmt(r.imd)}</td>
-                <td><span class="badge" style="background:${CONFIG.colors[r.status]}">${r.status}</span></td>
-                <td>${fmt(r.cars)}</td>
-                <td>${fmt(r.trucks)}</td>
-                <td>${fmt(r.motorcycles)}</td>
+                <td>${esc(r.id)}</td>
+                <td>${esc(r.name)}</td>
+                <td>${r.imv === null ? '-' : fmt(r.imv)}</td>
+                <td><span class="badge" style="background:${CONFIG.colors[r.state]}">${r.state}</span></td>
             </tr>`).join('');
     }
 
     function renderStats() {
+        const d = withData().map(r => r.imv).sort((a, b) => a - b);
         $('totalRecords').textContent = fmt(filtered.length);
-        $('totalZones').textContent = new Set(filtered.map(r => r.street)).size;
-        const byDate = [...groupBy(filtered, r => r.date)].sort((a, b) => a[0].localeCompare(b[0]));
-        const daily = byDate.map(([, rows]) => avg(rows.map(value)));
-        $('weeklyAvg').textContent = fmt(avg(daily.slice(-7)) * 7);
-        const half = Math.floor(daily.length / 2);
-        const a = avg(daily.slice(0, half));
-        const b = avg(daily.slice(half));
-        $('variation').textContent = a ? `${((b - a) / a * 100).toFixed(1)}%` : '0%';
+        $('totalZones').textContent = fmt(d.length);
+        $('weeklyAvg').textContent = d.length ? fmt(d[Math.floor(d.length / 2)]) : '-';
+        const busy = filtered.filter(r => ['denso', 'congestionado', 'cortado'].includes(r.state)).length;
+        $('variation').textContent = filtered.length ? `${(busy / filtered.length * 100).toFixed(1)}%` : '0%';
     }
 
     function exportCSV() {
-        const header = 'fecha,calle,imd,estado,automoviles,camiones,motos';
-        const lines = filtered.map(r => [r.date, `"${r.street}"`, r.imd, r.status, r.cars, r.trucks, r.motorcycles].join(','));
+        const header = 'id,tramo,intensidad_veh_h,estado';
+        const lines = filtered.map(r => [r.id, `"${String(r.name).replace(/"/g, '""')}"`, r.imv ?? '', r.state].join(','));
         const blob = new Blob([[header, ...lines].join('\n')], { type: 'text/csv;charset=utf-8;' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
-        a.download = 'imd-valencia.csv';
+        a.download = 'trafico-valencia.csv';
         a.click();
         URL.revokeObjectURL(a.href);
     }

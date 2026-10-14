@@ -36,24 +36,13 @@
             </div>
             
             <div class="filter-group">
-                <label>Buscar Calle/Zona</label>
-                <input type="text" id="searchInput" placeholder="Ej: Gran Vía..." class="filter-input">
+                <label>Buscar tramo</label>
+                <input type="text" id="searchInput" placeholder="Ej: Sagunto..." class="filter-input">
             </div>
 
             <div class="filter-group">
-                <label>Rango de Fechas</label>
-                <input type="date" id="startDate" class="filter-input">
-                <input type="date" id="endDate" class="filter-input">
-            </div>
-
-            <div class="filter-group">
-                <label>Tipo de Vehículo</label>
-                <select id="vehicleType" class="filter-input">
-                    <option value="all">Todos</option>
-                    <option value="cars">Automóviles</option>
-                    <option value="trucks">Camiones</option>
-                    <option value="motorcycles">Motocicletas</option>
-                </select>
+                <label>Intensidad mínima (veh/h)</label>
+                <input type="number" id="minIntensity" class="filter-input" min="0" value="0">
             </div>
 
             <div class="filter-group">
@@ -63,6 +52,7 @@
                     <label><input type="checkbox" value="denso" checked> Denso</label>
                     <label><input type="checkbox" value="congestionado" checked> Congestionado</label>
                     <label><input type="checkbox" value="cortado" checked> Cortado</label>
+                    <label><input type="checkbox" value="sin datos" checked> Sin datos</label>
                 </div>
             </div>
 
@@ -79,9 +69,9 @@
                         <i class="fas fa-car"></i>
                     </div>
                     <div class="kpi-content">
-                        <h3>Promedio Diario</h3>
-                        <p class="kpi-value" id="avgValue">2,450</p>
-                        <span class="kpi-unit">vehículos/día</span>
+                        <h3>Intensidad Media</h3>
+                        <p class="kpi-value" id="avgValue">-</p>
+                        <span class="kpi-unit">vehículos/h</span>
                     </div>
                 </div>
 
@@ -90,9 +80,9 @@
                         <i class="fas fa-arrow-up"></i>
                     </div>
                     <div class="kpi-content">
-                        <h3>Pico Máximo</h3>
-                        <p class="kpi-value" id="maxValue">5,890</p>
-                        <span class="kpi-unit">vehículos/día</span>
+                        <h3>Tramo Más Saturado</h3>
+                        <p class="kpi-value" id="maxValue">-</p>
+                        <span class="kpi-unit">vehículos/h</span>
                     </div>
                 </div>
 
@@ -101,9 +91,9 @@
                         <i class="fas fa-arrow-down"></i>
                     </div>
                     <div class="kpi-content">
-                        <h3>Mínimo Registrado</h3>
-                        <p class="kpi-value" id="minValue">850</p>
-                        <span class="kpi-unit">vehículos/día</span>
+                        <h3>Tramo Menos Cargado</h3>
+                        <p class="kpi-value" id="minValue">-</p>
+                        <span class="kpi-unit">vehículos/h</span>
                     </div>
                 </div>
 
@@ -112,9 +102,9 @@
                         <i class="fas fa-traffic-light"></i>
                     </div>
                     <div class="kpi-content">
-                        <h3>Estado Actual</h3>
-                        <p class="kpi-value" id="statusValue">Fluido</p>
-                        <span class="kpi-unit">en tiempo real</span>
+                        <h3>Tramos Monitorizados</h3>
+                        <p class="kpi-value" id="statusValue">-</p>
+                        <span class="kpi-unit" id="updatedAt">cargando…</span>
                     </div>
                 </div>
             </section>
@@ -122,42 +112,39 @@
             <!-- Charts Section -->
             <section class="charts-section">
                 <div class="chart-container">
-                    <h2>Tendencia de Tráfico</h2>
+                    <h2>Estado del Tráfico</h2>
                     <canvas id="trendChart"></canvas>
                 </div>
 
                 <div class="chart-container">
-                    <h2>Distribución por Hora</h2>
+                    <h2>Distribución por Intensidad</h2>
                     <canvas id="hourlyChart"></canvas>
                 </div>
             </section>
 
             <!-- Map Section -->
             <section class="map-section">
-                <h2>Mapa de Intensidad - Valencia</h2>
+                <h2>Mapa de Intensidad en Tiempo Real - Valencia</h2>
                 <div id="map" class="map-container"></div>
             </section>
 
             <!-- Comparison Section -->
             <section class="comparison-section">
-                <h2>Comparativa de Calles</h2>
+                <h2>Top 15 Tramos con Más Tráfico</h2>
                 <canvas id="comparisonChart"></canvas>
             </section>
 
             <!-- Data Table -->
             <section class="table-section">
-                <h2>Detalle de Datos</h2>
+                <h2>Detalle por Tramo</h2>
                 <div class="table-container">
                     <table id="dataTable">
                         <thead>
                             <tr>
-                                <th>Fecha</th>
-                                <th>Calle/Zona</th>
-                                <th>IMD (veh/día)</th>
+                                <th>ID</th>
+                                <th>Tramo</th>
+                                <th>Intensidad (veh/h)</th>
                                 <th>Estado</th>
-                                <th>Automóviles</th>
-                                <th>Camiones</th>
-                                <th>Motos</th>
                             </tr>
                         </thead>
                         <tbody id="tableBody">
@@ -171,22 +158,10 @@
             <section class="stats-section">
                 <h2>Estadísticas Generales</h2>
                 <div class="stats-grid">
-                    <div class="stat-card">
-                        <h3>Total Registros</h3>
-                        <p id="totalRecords">0</p>
-                    </div>
-                    <div class="stat-card">
-                        <h3>Zonas Monitoreadas</h3>
-                        <p id="totalZones">0</p>
-                    </div>
-                    <div class="stat-card">
-                        <h3>Tráfico Promedio Semanal</h3>
-                        <p id="weeklyAvg">0</p>
-                    </div>
-                    <div class="stat-card">
-                        <h3>Variación (%)</h3>
-                        <p id="variation">0%</p>
-                    </div>
+                    <div class="stat-card"><h3>Tramos Mostrados</h3><p id="totalRecords">0</p></div>
+                    <div class="stat-card"><h3>Con Datos</h3><p id="totalZones">0</p></div>
+                    <div class="stat-card"><h3>Mediana (veh/h)</h3><p id="weeklyAvg">0</p></div>
+                    <div class="stat-card"><h3>Con Tráfico Denso o Peor</h3><p id="variation">0%</p></div>
                 </div>
             </section>
 
@@ -196,19 +171,17 @@
                 <div class="info-box">
                     <h3>Sobre este Dashboard</h3>
                     <p>
-                        Este dashboard muestra el <strong>Índice Medio Diario de Vehículos (IMD)</strong> en las calles de Valencia.
-                        Los datos provienen de fuentes públicas del Ayuntamiento de Valencia y portales de datos abiertos.
+                        Este dashboard muestra la <strong>intensidad de tráfico en tiempo real</strong> (vehículos/hora) por tramo de calle en Valencia.
+                        Los datos son <strong>reales</strong> y se descargan en directo del Ayuntamiento de Valencia; se actualizan cada minuto.
                     </p>
                     <h3>Fuentes de Datos</h3>
                     <ul>
-                        <li><a href="https://valencia.opendatasoft.com/" target="_blank">Valencia OpenDataSoft</a></li>
-                        <li><a href="https://datos.gob.es/" target="_blank">datos.gob.es</a></li>
-                        <li><a href="https://www.icv.gva.es/" target="_blank">Institut Cartogràfic Valencià</a></li>
+                        <li><a href="https://opendata.vlci.valencia.es/dataset/intensitat-transit-trams-intensidad-trafico-tramos" target="_blank" rel="noopener">Intensidad tráfico tramos (Ayuntamiento de Valencia)</a></li>
+                        <li><a href="https://opendata.vlci.valencia.es/" target="_blank" rel="noopener">Portal de datos abiertos de Valencia</a></li>
                     </ul>
                     <h3>Limitaciones</h3>
                     <p>
-                        Este dashboard utiliza datos sintéticos de demostración. 
-                        Para datos oficiales y actuales, consulta directamente los portales públicos del Ayuntamiento.
+                        Es una lectura instantánea, no un histórico ni un IMD diario. Algunos tramos no tienen lectura o estado válido y se muestran como «sin datos».
                     </p>
                 </div>
             </section>
@@ -219,7 +192,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
     <script src="config.js"></script>
-    <script src="data.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
