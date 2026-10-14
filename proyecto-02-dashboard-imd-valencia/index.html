@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Panel de exploración del Índice Medio Diario de tráfico en València.">
+  <meta name="theme-color" content="#101923">
+  <title>IMD València — Panel de tráfico</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="styles.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script defer src="config.js"></script>
+  <script defer src="script.js"></script>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <a class="brand" href="#inicio" aria-label="IMD València, inicio">
+        <span class="brand-mark" aria-hidden="true">V</span>
+        <span><strong>valència<span class="brand-dot">.</span></strong><small>observatorio urbano</small></span>
+      </a>
+      <div class="sidebar-label">ANÁLISIS</div>
+      <nav class="side-nav" aria-label="Navegación principal">
+        <a class="nav-item active" href="#inicio"><span aria-hidden="true">▦</span> Resumen</a>
+        <a class="nav-item" href="#mapa"><span aria-hidden="true">⌖</span> Mapa de tráfico</a>
+        <a class="nav-item" href="#tendencias"><span aria-hidden="true">⌁</span> Tendencias</a>
+        <a class="nav-item" href="#datos"><span aria-hidden="true">▤</span> Datos</a>
+      </nav>
+      <div class="sidebar-bottom">
+        <div class="source-card"><span class="source-icon" aria-hidden="true">↗</span><div><strong>Datos abiertos</strong><small>Ayuntamiento de València</small></div></div>
+        <p>IMD · Índice Medio Diario</p>
+        <span class="sidebar-version">PANEL DE MOVILIDAD <span>v1.0</span></span>
+      </div>
+    </aside>
+
+    <main id="inicio" class="main-content">
+      <header class="topbar">
+        <div class="breadcrumb">MOVILIDAD <span>/</span> <strong>ÍNDICE MEDIO DIARIO</strong></div>
+        <div class="top-actions">
+          <span class="updated-label"><span class="live-dot"></span><span id="updated-at">Actualizando datos…</span></span>
+          <button class="icon-button" id="theme-toggle" type="button" aria-label="Activar modo oscuro" title="Cambiar tema">◐</button>
+        </div>
+      </header>
+
+      <section class="page-heading">
+        <div>
+          <div class="eyebrow"><span class="eyebrow-line"></span> OBSERVATORIO DE MOVILIDAD · VALÈNCIA</div>
+          <h1>Índice Medio <span>Diario</span></h1>
+          <p class="intro">Explora la intensidad del tráfico y su evolución en la ciudad.</p>
+        </div>
+        <div class="heading-actions">
+          <label class="select-wrap" for="zone-filter"><span class="sr-only">Filtrar por zona</span>
+            <select id="zone-filter"><option value="">Todas las zonas</option></select>
+          </label>
+          <button class="button button-primary" id="download-csv" type="button"><span aria-hidden="true">↓</span> Exportar</button>
+        </div>
+      </section>
+
+      <div class="notice" id="data-notice" role="status">
+        <span class="notice-icon" aria-hidden="true">i</span>
+        <span><strong>Vista de demostración.</strong> Las cifras IMD mostradas son datos de ejemplo, no mediciones oficiales. El feed municipal de tráfico en tiempo real se consulta por separado.</span>
+        <button id="notice-dismiss" type="button" aria-label="Cerrar aviso">×</button>
+      </div>
+
+      <section class="kpi-grid" aria-label="Indicadores de tráfico">
+        <article class="kpi-card">
+          <div class="kpi-top"><span>IMD PROMEDIO</span><span class="kpi-icon mint" aria-hidden="true">↗</span></div>
+          <div class="kpi-value"><span id="kpi-average">—</span><small>vehículos / día</small></div>
+          <div class="kpi-caption"><span class="caption-dot mint-dot"></span> Promedio de puntos filtrados</div>
+        </article>
+        <article class="kpi-card">
+          <div class="kpi-top"><span>VALOR MÁXIMO</span><span class="kpi-icon amber" aria-hidden="true">⌃</span></div>
+          <div class="kpi-value"><span id="kpi-maximum">—</span><small>vehículos / día</small></div>
+          <div class="kpi-caption" id="maximum-location">—</div>
+        </article>
+        <article class="kpi-card">
+          <div class="kpi-top"><span>VALOR MÍNIMO</span><span class="kpi-icon violet" aria-hidden="true">⌄</span></div>
+          <div class="kpi-value"><span id="kpi-minimum">—</span><small>vehículos / día</small></div>
+          <div class="kpi-caption" id="minimum-location">—</div>
+        </article>
+        <article class="kpi-card">
+          <div class="kpi-top"><span>ESTADO DEL FEED</span><span class="kpi-icon blue" aria-hidden="true">⌁</span></div>
+          <div class="kpi-value feed-value"><span id="kpi-live">—</span></div>
+          <div class="kpi-caption" id="feed-caption">Tráfico municipal en tiempo real</div>
+        </article>
+      </section>
+
+      <section id="tendencias" class="chart-grid">
+        <article class="panel trend-panel">
+          <div class="panel-heading">
+            <div><div class="section-kicker">EVOLUCIÓN</div><h2>Tendencia del tráfico</h2></div>
+            <label class="select-wrap compact-select" for="trend-zone"><span class="sr-only">Zona para mostrar tendencia</span><select id="trend-zone"><option value="">Todas las zonas</option></select></label>
+          </div>
+          <div class="chart-area"><canvas id="trend-chart" aria-label="Gráfico de tendencia semanal del IMD"></canvas></div>
+          <div class="chart-footnote"><span class="legend-dot"></span> IMD semanal <span class="demo-label">· datos demostrativos</span></div>
+        </article>
+        <article class="panel compare-panel">
+          <div class="panel-heading"><div><div class="section-kicker">COMPARATIVA</div><h2>Calles con más tráfico</h2></div><span class="panel-unit">VEHÍCULOS / DÍA</span></div>
+          <div class="chart-area compare-chart"><canvas id="compare-chart" aria-label="Gráfico de calles comparadas por IMD"></canvas></div>
+        </article>
+        <article class="panel vehicle-type-panel">
+          <div class="panel-heading"><div><div class="section-kicker">COMPOSICIÓN</div><h2>Tipos de vehículo</h2></div><span class="panel-unit">EJEMPLO</span></div>
+          <div class="chart-area vehicle-chart"><canvas id="vehicle-chart" aria-label="Gráfico demostrativo de tipos de vehículo"></canvas></div>
+          <div class="type-legend"><span><i class="type-dot type-car"></i>Turismos</span><span><i class="type-dot type-moto"></i>Motocicletas</span><span><i class="type-dot type-heavy"></i>Pesados</span><span><i class="type-dot type-bus"></i>Autobuses</span></div>
+          <p class="type-disclaimer">Distribución ficticia; el feed municipal no proporciona esta clasificación.</p>
+        </article>
+      </section>
+
+      <section id="mapa" class="map-grid">
+        <article class="panel map-panel">
+          <div class="panel-heading">
+            <div><div class="section-kicker">DISTRIBUCIÓN GEOGRÁFICA</div><h2>Mapa de intensidad</h2></div>
+            <div class="map-legend"><span class="legend-dot low"></span> Baja <span class="legend-dot mid"></span> Media <span class="legend-dot high"></span> Alta</div>
+          </div>
+          <div id="traffic-map" role="application" aria-label="Mapa interactivo de puntos de tráfico de València"></div>
+          <div class="map-attribution">Los marcadores representan valores IMD demostrativos · <span id="map-status">Cargando mapa…</span></div>
+        </article>
+        <article class="panel vehicle-panel">
+          <div class="panel-heading"><div><div class="section-kicker">DATOS ABIERTOS</div><h2>Estado del tráfico</h2></div><span class="live-pill"><span class="live-dot"></span> FEED</span></div>
+          <div class="live-summary"><span id="live-count">—</span><span>incidencias / estados recibidos</span></div>
+          <p id="live-message" class="live-message">Intentando conectar con el feed del Ayuntamiento…</p>
+          <a class="source-link" href="https://valencia.opendatasoft.com/explore/dataset/estat-transit-temps-real-estado-trafico-tiempo-real/" target="_blank" rel="noopener noreferrer">Consultar dataset municipal <span aria-hidden="true">↗</span></a>
+        </article>
+      </section>
+
+      <section id="datos" class="panel table-panel">
+        <div class="panel-heading table-heading">
+          <div><div class="section-kicker">EXPLORADOR</div><h2>Puntos de medición</h2></div>
+          <div class="table-controls">
+            <label class="search-box"><span aria-hidden="true">⌕</span><span class="sr-only">Buscar calle o zona</span><input id="search-input" type="search" placeholder="Buscar calle…" autocomplete="off"></label>
+            <label class="date-filter"><span class="sr-only">Fecha desde</span><input id="date-from" type="date" aria-label="Fecha desde"></label>
+            <label class="date-filter"><span class="sr-only">Fecha hasta</span><input id="date-to" type="date" aria-label="Fecha hasta"></label>
+            <button class="button button-secondary" id="download-json" type="button">JSON</button>
+          </div>
+        </div>
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>CALLE / AVENIDA</th><th>ZONA</th><th>FECHA</th><th>IMD <span aria-label="vehículos por día">(veh./día)</span></th><th>FUENTE</th></tr></thead>
+            <tbody id="readings-table"></tbody>
+          </table>
+          <div class="empty-state" id="empty-state" hidden>No hay resultados para los filtros seleccionados.</div>
+        </div>
+        <div class="table-footer"><span id="table-count">—</span><span class="table-source">Las filas del feed en tiempo real no se contabilizan como IMD salvo que la API incluya ese dato.</span></div>
+      </section>
+      <footer class="page-footer">Datos de muestra para explorar la interfaz. <a href="README.md">Fuentes, metodología y limitaciones</a></footer>
+    </main>
+  </div>
+</body>
+</html>
