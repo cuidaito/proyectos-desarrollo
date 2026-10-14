@@ -286,3 +286,10 @@
 
     document.addEventListener('DOMContentLoaded', init);
 })();
+
+// La base SQLite solo existe cuando el dashboard corre en el contenedor.
+if (!location.hostname.endsWith('github.io')) {
+    fetch('data/trafico.db', { method: 'HEAD' }).then(r => {
+        if (r.ok) document.getElementById('dbLink').hidden = false;
+    }).catch(() => {});
+}

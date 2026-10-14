@@ -46,6 +46,9 @@ body {
     cursor: pointer;
 }
 
+.export-btn { text-decoration: none; font-size: 0.9rem; }
+.export-btn[hidden] { display: none; }
+
 .theme-toggle:hover, .export-btn:hover { background: rgba(255, 255, 255, 0.35); }
 
 .container { display: flex; align-items: flex-start; }

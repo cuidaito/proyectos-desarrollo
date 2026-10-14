@@ -1,6 +1,7 @@
 """Captura la intensidad de tráfico por tramo de Valencia y la añade al histórico."""
 import json
 import os
+import sqlite3
 import sys
 import time
 import urllib.request
@@ -28,6 +29,24 @@ def fetch():
 
 def write(path, obj):
     path.write_text(json.dumps(obj, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+
+
+def save_sqlite(tramos, snapshot):
+    con = sqlite3.connect(DATA / "trafico.db")
+    with con:
+        con.execute("CREATE TABLE IF NOT EXISTS tramos (idtramo TEXT PRIMARY KEY, nombre TEXT)")
+        con.execute(
+            "CREATE TABLE IF NOT EXISTS lecturas (t TEXT, idtramo TEXT, imv INTEGER, estado INTEGER,"
+            " PRIMARY KEY (t, idtramo))"
+        )
+        con.executemany(
+            "INSERT OR REPLACE INTO tramos VALUES (?, ?)", [(k, v["n"]) for k, v in tramos.items()]
+        )
+        con.executemany(
+            "INSERT OR IGNORE INTO lecturas VALUES (?, ?, ?, ?)",
+            [(snapshot["t"], k, v[0], v[1]) for k, v in snapshot["v"].items()],
+        )
+    con.close()
 
 
 def main():
@@ -64,6 +83,8 @@ def main():
     day = json.loads(day_file.read_text(encoding="utf-8")) if day_file.exists() else []
     day.append(snapshot)
     write(day_file, day)
+
+    save_sqlite(tramos, snapshot)
 
     days = sorted(p.stem for p in HISTORY.glob("*.json"))
     write(DATA / "index.json", days)
