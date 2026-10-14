@@ -186,6 +186,7 @@
 
     function replaceChart(chart, id, config) {
         if (chart) chart.destroy();
+        config.options = Object.assign({ responsive: true, maintainAspectRatio: false }, config.options);
         return new Chart($(id), config);
     }
 
