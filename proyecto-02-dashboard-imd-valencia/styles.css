@@ -158,3 +158,9 @@ th { position: sticky; top: 0; background: var(--card); }
     .container { flex-direction: column; }
     .sidebar { width: 100%; position: static; min-height: 0; }
 }
+
+.last-update { display: flex; flex-direction: column; font-size: 0.75rem; text-align: right; opacity: 0.95; justify-content: center; }
+.nav-controls { align-items: center; }
+.section-header { display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; margin-bottom: 0.5rem; }
+.section-header h2 { margin-bottom: 0; }
+.history-note { color: var(--muted); font-size: 0.85rem; margin-bottom: 0.8rem; }
