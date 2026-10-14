@@ -1,7 +1,6 @@
 services:
   trafico:
-    image: trafico-valencia:latest
-    build: .
+    image: trafico-valencia:amd64
     container_name: trafico-valencia
     restart: unless-stopped
     ports:
