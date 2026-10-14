@@ -2,7 +2,7 @@
   const config = window.IMD_CONFIG || {};
   const numberFormat = new Intl.NumberFormat('es-ES');
   const dateFormat = new Intl.DateTimeFormat('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
-  const state = { stations: [], readings: [], liveRows: [], map: null, markers: [], charts: {} };
+  const state = { stations: [], readings: [], vehicleTypeShares: [], liveRows: [], map: null, markers: [], charts: {} };
   const $ = (selector) => document.querySelector(selector);
 
   async function loadDashboard() {
@@ -12,6 +12,7 @@
       const data = await response.json();
       state.stations = data.stations;
       state.readings = data.readings;
+      state.vehicleTypeShares = data.vehicleTypeShares || [];
       populateZones();
       renderDashboard();
       setUpdatedAt('Datos de demostración');
@@ -62,22 +63,24 @@
   }
 
   function renderDashboard() {
-    const readings = selectedReadings();
     const stations = filteredStations();
-    renderKpis(readings, stations);
+    const readings = selectedReadings();
+    renderKpis(stations);
     renderTable(readings);
     renderCharts(readings, stations);
     updateMap(stations);
   }
 
-  function renderKpis(readings, stations) {
+  function renderKpis(stations) {
     const values = stations.map((station) => station.imd).filter(Number.isFinite);
     const average = values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : null;
     const maximum = stations.reduce((result, station) => (!result || station.imd > result.imd ? station : result), null);
+    const minimum = stations.reduce((result, station) => (!result || station.imd < result.imd ? station : result), null);
     $('#kpi-average').textContent = average === null ? '—' : numberFormat.format(Math.round(average));
     $('#kpi-maximum').textContent = maximum ? numberFormat.format(maximum.imd) : '—';
     $('#maximum-location').textContent = maximum ? maximum.name : 'Sin puntos de medición';
-    $('#kpi-stations').textContent = numberFormat.format(stations.length);
+    $('#kpi-minimum').textContent = minimum ? numberFormat.format(minimum.imd) : '—';
+    $('#minimum-location').textContent = minimum ? minimum.name : 'Sin puntos de medición';
     $('#kpi-live').textContent = state.liveRows.length ? 'Conectado' : 'Sin conexión';
     $('#feed-caption').textContent = state.liveRows.length ? `${numberFormat.format(state.liveRows.length)} registros recibidos` : 'Feed municipal no disponible';
   }
@@ -85,19 +88,7 @@
   function renderTable(readings) {
     const tbody = $('#readings-table');
     tbody.replaceChildren();
-    const live = state.liveRows.map((row) => ({
-      date: row.date,
-      imd: row.imd,
-      station: { name: row.name, zone: row.zone || '—' },
-      source: 'Tiempo real'
-    })).filter((row) => {
-      const term = $('#search-input').value.trim().toLocaleLowerCase('es');
-      const zone = $('#zone-filter').value;
-      const from = $('#date-from').value;
-      const to = $('#date-to').value;
-      const textMatches = !term || `${row.station.name} ${row.station.zone}`.toLocaleLowerCase('es').includes(term);
-      return textMatches && (!zone || row.station.zone === zone) && (!from || row.date >= from) && (!to || row.date <= to);
-    });
+    const live = filteredLiveRows();
     const rows = [...live, ...readings].sort((a, b) => b.date.localeCompare(a.date) || a.station.name.localeCompare(b.station.name, 'es'));
     rows.forEach((reading) => {
       const tr = document.createElement('tr');
@@ -158,6 +149,15 @@
       type: 'bar',
       data: { labels: topStations.map((station) => shortName(station.name)), datasets: [{ data: topStations.map((station) => station.imd), backgroundColor: topStations.map((_, index) => index === 0 ? '#31c7a0' : 'rgba(49, 199, 160, .42)'), borderRadius: 5, barThickness: 15 }] },
       options: { ...commonOptions, indexAxis: 'y', scales: { x: { ...commonOptions.scales.x, beginAtZero: true }, y: { ...commonOptions.scales.y, grid: { display: false } } } }
+    });
+    if (state.charts.vehicles) state.charts.vehicles.destroy();
+    state.charts.vehicles = new Chart($('#vehicle-chart'), {
+      type: 'doughnut',
+      data: {
+        labels: state.vehicleTypeShares.map((item) => item.type),
+        datasets: [{ data: state.vehicleTypeShares.map((item) => item.share), backgroundColor: ['#31c7a0', '#6b93d7', '#f2b35e', '#a88be8'], borderColor: getComputedStyle(document.body).getPropertyValue('--surface').trim(), borderWidth: 3, hoverOffset: 4 }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { display: false }, tooltip: { callbacks: { label: (context) => `${context.label}: ${context.raw}% (demostración)` } } } }
     });
   }
 
@@ -236,6 +236,22 @@
     };
   }
 
+  function filteredLiveRows() {
+    const term = $('#search-input').value.trim().toLocaleLowerCase('es');
+    const zone = $('#zone-filter').value;
+    const from = $('#date-from').value;
+    const to = $('#date-to').value;
+    return state.liveRows.filter((row) => {
+      const textMatches = !term || `${row.name} ${row.zone}`.toLocaleLowerCase('es').includes(term);
+      return textMatches && (!zone || row.zone === zone) && (!from || row.date >= from) && (!to || row.date <= to);
+    }).map((row) => ({
+      date: row.date,
+      imd: row.imd,
+      station: { name: row.name, zone: row.zone || '—' },
+      source: 'Tiempo real'
+    }));
+  }
+
   function firstValue(object, keys) {
     const entries = Object.entries(object);
     for (const key of keys) {
@@ -294,12 +310,12 @@
   }
 
   function exportRows() {
-    return selectedReadings().map((reading) => ({
+    return [...filteredLiveRows(), ...selectedReadings()].map((reading) => ({
       calle: reading.station.name,
       zona: reading.station.zone,
       fecha: reading.date,
-      imd_vehiculos_dia: reading.imd,
-      fuente: 'Datos demostrativos no oficiales'
+      imd_vehiculos_dia: Number.isFinite(reading.imd) ? reading.imd : null,
+      fuente: reading.source === 'Tiempo real' ? 'Valencia Open Data' : 'Datos demostrativos no oficiales'
     }));
   }
 

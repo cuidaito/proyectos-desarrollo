@@ -1,5 +1,11 @@
 {
   "source": "Datos de ejemplo para demostración; no son mediciones oficiales",
+  "vehicleTypeShares": [
+    { "type": "Turismos", "share": 72 },
+    { "type": "Motocicletas", "share": 13 },
+    { "type": "Vehículos pesados", "share": 10 },
+    { "type": "Autobuses", "share": 5 }
+  ],
   "stations": [
     { "id": "v-01", "name": "Av. del Cid", "zone": "Oeste", "lat": 39.4666, "lng": -0.4051, "imd": 28500 },
     { "id": "v-02", "name": "Av. de les Corts Valencianes", "zone": "Noroeste", "lat": 39.4955, "lng": -0.3998, "imd": 32100 },

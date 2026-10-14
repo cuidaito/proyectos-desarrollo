@@ -133,7 +133,7 @@ h1 span { color: var(--mint); }
 .caption-dot { display: inline-block; width: 5px; height: 5px; margin: 0 5px 1px 0; border-radius: 50%; }
 .mint-dot { background: var(--mint); }
 
-.chart-grid { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(270px, 1fr); gap: 14px; margin-bottom: 14px; }
+.chart-grid { display: grid; grid-template-columns: minmax(0, 1.45fr) repeat(2, minmax(0, 1fr)); gap: 14px; margin-bottom: 14px; }
 .panel { min-width: 0; padding: 17px 18px 12px; }
 .panel-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .panel-heading h2 { margin: 5px 0 0; font: 700 14px Manrope, sans-serif; letter-spacing: -.2px; }
@@ -141,6 +141,15 @@ h1 span { color: var(--mint); }
 .compact-select select { min-width: 112px; height: 30px; padding-left: 9px; font-size: 9px; }
 .chart-area { position: relative; height: 195px; margin-top: 14px; }
 .compare-chart { height: 198px; }
+.vehicle-chart { height: 126px; margin-top: 7px; }
+.type-legend { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 4px; color: #78868d; font-size: 8px; }
+.type-legend span { display: flex; align-items: center; gap: 5px; white-space: nowrap; }
+.type-dot { width: 6px; height: 6px; flex: 0 0 auto; border-radius: 50%; }
+.type-car { background: #31c7a0; }
+.type-moto { background: #6b93d7; }
+.type-heavy { background: #f2b35e; }
+.type-bus { background: #a88be8; }
+.type-disclaimer { margin: 8px 0 0; color: #99a3a8; font-size: 8px; line-height: 1.4; }
 .chart-footnote { display: flex; align-items: center; gap: 6px; margin-top: 5px; color: #75848b; font-size: 9px; }
 .chart-footnote .legend-dot { width: 7px; height: 7px; background: var(--mint); }
 .demo-label { color: #a1aaae; }
@@ -221,6 +230,8 @@ td.imd-cell { color: #27383f; font-weight: 700; }
   .sidebar { width: 210px; }
   .main-content { margin-left: 210px; }
   .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .chart-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .vehicle-type-panel { grid-column: 1 / -1; }
   .table-heading { flex-direction: column; }
   .table-controls { width: 100%; justify-content: flex-start; }
 }
@@ -247,6 +258,7 @@ td.imd-cell { color: #27383f; font-weight: 700; }
   .kpi-value > span { font-size: 21px; }
   .kpi-top { font-size: 8px; }
   .chart-grid, .map-grid { grid-template-columns: 1fr; gap: 10px; }
+  .vehicle-type-panel { grid-column: auto; }
   .panel { padding: 14px 13px 11px; }
   .chart-area { height: 185px; }
   .compare-chart { height: 180px; }

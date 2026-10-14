@@ -78,9 +78,9 @@
           <div class="kpi-caption" id="maximum-location">—</div>
         </article>
         <article class="kpi-card">
-          <div class="kpi-top"><span>PUNTOS DE MEDICIÓN</span><span class="kpi-icon violet" aria-hidden="true">⌖</span></div>
-          <div class="kpi-value"><span id="kpi-stations">—</span><small>ubicaciones</small></div>
-          <div class="kpi-caption">En las zonas seleccionadas</div>
+          <div class="kpi-top"><span>VALOR MÍNIMO</span><span class="kpi-icon violet" aria-hidden="true">⌄</span></div>
+          <div class="kpi-value"><span id="kpi-minimum">—</span><small>vehículos / día</small></div>
+          <div class="kpi-caption" id="minimum-location">—</div>
         </article>
         <article class="kpi-card">
           <div class="kpi-top"><span>ESTADO DEL FEED</span><span class="kpi-icon blue" aria-hidden="true">⌁</span></div>
@@ -101,6 +101,12 @@
         <article class="panel compare-panel">
           <div class="panel-heading"><div><div class="section-kicker">COMPARATIVA</div><h2>Calles con más tráfico</h2></div><span class="panel-unit">VEHÍCULOS / DÍA</span></div>
           <div class="chart-area compare-chart"><canvas id="compare-chart" aria-label="Gráfico de calles comparadas por IMD"></canvas></div>
+        </article>
+        <article class="panel vehicle-type-panel">
+          <div class="panel-heading"><div><div class="section-kicker">COMPOSICIÓN</div><h2>Tipos de vehículo</h2></div><span class="panel-unit">EJEMPLO</span></div>
+          <div class="chart-area vehicle-chart"><canvas id="vehicle-chart" aria-label="Gráfico demostrativo de tipos de vehículo"></canvas></div>
+          <div class="type-legend"><span><i class="type-dot type-car"></i>Turismos</span><span><i class="type-dot type-moto"></i>Motocicletas</span><span><i class="type-dot type-heavy"></i>Pesados</span><span><i class="type-dot type-bus"></i>Autobuses</span></div>
+          <p class="type-disclaimer">Distribución ficticia; el feed municipal no proporciona esta clasificación.</p>
         </article>
       </section>
 
