@@ -1,5 +1,6 @@
 """Captura la intensidad de tráfico por tramo de Valencia y la añade al histórico."""
 import json
+import os
 import sys
 import time
 import urllib.request
@@ -10,7 +11,7 @@ URL = (
     "https://geoportal.valencia.es/server/rest/services/OPENDATA/Trafico/MapServer/188/query"
     "?where=1%3D1&outFields=idtramo,des_tramo,estado,imv&outSR=4326&resultRecordCount=2000&f=geojson"
 )
-DATA = Path(__file__).resolve().parent.parent / "data"
+DATA = Path(os.environ.get("DATA_DIR") or Path(__file__).resolve().parent.parent / "data")
 HISTORY = DATA / "history"
 
 
