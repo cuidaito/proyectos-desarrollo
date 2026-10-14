@@ -90,7 +90,7 @@
             return { t: s.t, y: vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : null };
         });
         $('historyNote').textContent = history.length
-            ? `${history.length} capturas (una cada 30 min).`
+            ? `${history.length} ${history.length === 1 ? 'captura' : 'capturas'} (una cada 30 min).${history.length < 10 ? ' Aún hay pocos datos: la tendencia será fiable cuando se acumulen más capturas.' : ''}`
             : 'Aún no hay histórico disponible: las capturas se acumulan automáticamente cada 30 minutos.';
         historyChart = replaceChart(historyChart, 'historyChart', {
             type: 'line',
@@ -106,7 +106,8 @@
                     spanGaps: true,
                     pointRadius: points.length > 100 ? 0 : 3
                 }]
-            }
+            },
+            options: { scales: { y: { beginAtZero: true } } }
         });
     }
 
