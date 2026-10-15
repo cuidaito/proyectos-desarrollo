@@ -3,14 +3,14 @@ FROM nginx:alpine
 RUN apk add --no-cache python3 tzdata
 
 COPY index.html styles.css config.js script.js /usr/share/nginx/html/
-COPY scripts/collect.py /app/collect.py
+COPY scripts/collect.py scripts/server.py /app/
 COPY docker/nginx.conf /etc/nginx/conf.d/default.conf
 COPY docker/entrypoint.sh /entrypoint.sh
 
-RUN chmod +x /entrypoint.sh && mkdir -p /usr/share/nginx/html/data/history
+RUN chmod +x /entrypoint.sh && mkdir -p /usr/share/nginx/html/data
 
 ENV DATA_DIR=/usr/share/nginx/html/data \
-    INTERVAL_SECONDS=900 \
+    INTERVAL_SECONDS=180 \
     TZ=Europe/Madrid
 
 VOLUME /usr/share/nginx/html/data

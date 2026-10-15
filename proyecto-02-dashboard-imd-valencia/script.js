@@ -8,7 +8,6 @@
     let base = [];
     let statusChart, intensityChart, topChart, historyChart, map, layer;
     let history = [];
-    const dayCache = {};
 
     function parse(geojson) {
         const byId = new Map();
@@ -53,22 +52,15 @@
         sel.value = all.some(r => r.id === current) ? current : 'all';
     }
 
-    async function getJSON(file) {
-        const res = await fetch(CONFIG.historyBase + file);
-        if (!res.ok) throw new Error(res.status);
-        return res.json();
-    }
-
     async function loadHistory() {
         const days = parseInt($('historyRange').value, 10);
         try {
-            const index = await getJSON('index.json');
-            const wanted = index.slice(-(days + 1));
-            await Promise.all(wanted.map(async d => {
-                if (!dayCache[d] || d === index[index.length - 1]) dayCache[d] = await getJSON(`history/${d}.json`);
-            }));
-            const since = Date.now() - days * 86400000;
-            history = wanted.flatMap(d => dayCache[d]).filter(s => Date.parse(s.t) >= since);
+            const res = await fetch('api/history', {
+                method: 'POST',
+                body: JSON.stringify({ days, tramo: $('tramoSelect').value, ids: filtered.map(r => r.id) })
+            });
+            if (!res.ok) throw new Error(res.status);
+            history = await res.json();
         } catch (e) {
             history = [];
         }
@@ -82,16 +74,10 @@
         const id = $('tramoSelect').value;
         const tramo = all.find(r => r.id === id);
         $('historyTitle').textContent = id === 'all' ? 'Histórico de intensidad (media de los tramos)' : `Histórico: ${tramo ? tramo.name : id}`;
-        const ids = new Set(filtered.map(r => r.id));
-        const points = history.map(s => {
-            let vals;
-            if (id === 'all') vals = Object.entries(s.v).filter(([k]) => ids.has(k)).map(([, v]) => v[0]);
-            else vals = s.v[id] ? [s.v[id][0]] : [];
-            return { t: s.t, y: vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : null };
-        });
+        const points = history;
         $('historyNote').textContent = history.length
-            ? `${history.length} ${history.length === 1 ? 'captura' : 'capturas'} periódicas.${history.length < 10 ? ' Aún hay pocos datos: la tendencia será fiable cuando se acumulen más capturas.' : ''}`
-            : 'Aún no hay histórico disponible: las capturas se acumulan automáticamente.';
+            ? `${history.length} ${history.length === 1 ? 'punto' : 'puntos'}.${history.length < 10 ? ' Aún hay pocos datos: la tendencia será fiable cuando se acumulen más capturas.' : ''}`
+            : 'Aún no hay histórico disponible: solo existe cuando la web corre en el contenedor y ya ha capturado datos.';
         historyChart = replaceChart(historyChart, 'historyChart', {
             type: 'line',
             data: {

@@ -6,6 +6,6 @@ services:
     ports:
       - "8080:80"
     environment:
-      INTERVAL_SECONDS: "900"
+      INTERVAL_SECONDS: "180"
     volumes:
       - ./datos:/usr/share/nginx/html/data
