@@ -1,5 +1,5 @@
 #!/bin/sh
-# Captura periódica y API en segundo plano; nginx en primer plano.
+# Captura periódica en segundo plano y API en primer plano.
 (
   while true; do
     python3 /app/collect.py || echo "captura fallida, se reintentará"
@@ -7,6 +7,4 @@
   done
 ) &
 
-python3 /app/server.py &
-
-exec nginx -g 'daemon off;'
+exec python3 /app/server.py

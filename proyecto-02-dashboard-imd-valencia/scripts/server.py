@@ -9,6 +9,7 @@ from urllib.parse import parse_qs, urlparse
 
 DB = Path(os.environ.get("DATA_DIR") or Path(__file__).resolve().parent.parent / "data") / "trafico.db"
 PORT = int(os.environ.get("API_PORT", "8000"))
+HOST = os.environ.get("API_HOST", "127.0.0.1")
 
 
 def bucket_minutes(days):
@@ -49,6 +50,7 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(body)))
         self.send_header("Cache-Control", "no-cache")
+        self.send_header("Access-Control-Allow-Origin", "*")
         self.end_headers()
         self.wfile.write(body)
 
@@ -63,6 +65,13 @@ class Handler(BaseHTTPRequestHandler):
         if url.path == "/api/trafico.db" and DB.exists():
             return self.send_db()
         self.send_json({"error": "not found"}, 404)
+
+    def do_OPTIONS(self):
+        self.send_response(204)
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        self.end_headers()
 
     def do_POST(self):
         if urlparse(self.path).path != "/api/history":
@@ -88,6 +97,7 @@ class Handler(BaseHTTPRequestHandler):
             self.send_header("Content-Type", "application/octet-stream")
             self.send_header("Content-Disposition", 'attachment; filename="trafico.db"')
             self.send_header("Content-Length", str(size))
+            self.send_header("Access-Control-Allow-Origin", "*")
             self.end_headers()
             with open(tmp.name, "rb") as f:
                 while chunk := f.read(65536):
@@ -98,4 +108,4 @@ class Handler(BaseHTTPRequestHandler):
 
 
 if __name__ == "__main__":
-    ThreadingHTTPServer(("127.0.0.1", PORT), Handler).serve_forever()
+    ThreadingHTTPServer((HOST, PORT), Handler).serve_forever()

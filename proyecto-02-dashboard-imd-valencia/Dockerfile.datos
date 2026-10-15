@@ -1,0 +1,18 @@
+FROM python:3.12-alpine
+
+RUN apk add --no-cache tzdata
+
+COPY scripts/collect.py scripts/server.py /app/
+COPY docker/entrypoint-datos.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh && mkdir -p /data
+
+ENV DATA_DIR=/data \
+    INTERVAL_SECONDS=180 \
+    API_HOST=0.0.0.0 \
+    API_PORT=8000 \
+    TZ=Europe/Madrid
+
+VOLUME /data
+EXPOSE 8000
+
+ENTRYPOINT ["/entrypoint.sh"]

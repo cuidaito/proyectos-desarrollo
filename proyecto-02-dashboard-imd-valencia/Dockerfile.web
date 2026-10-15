@@ -1,0 +1,8 @@
+FROM nginx:alpine
+
+COPY index.html styles.css config.js script.js /usr/share/nginx/html/
+COPY docker/web.conf.template /etc/nginx/templates/default.conf.template
+
+ENV API_UPSTREAM=datos:8000
+
+EXPOSE 80
