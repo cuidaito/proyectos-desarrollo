@@ -76,7 +76,15 @@ body {
     color: var(--text);
 }
 
-.checkbox-group { display: flex; flex-direction: column; gap: 0.3rem; font-size: 0.9rem; }
+.map-controls { display: flex; flex-wrap: wrap; gap: 0.8rem 1.5rem; align-items: center; margin-bottom: 0.8rem; }
+.mode-switch { display: flex; align-items: center; gap: 0.4rem; font-size: 0.9rem; }
+.mode-btn { border: 1px solid #cbd5e0; background: transparent; color: inherit; padding: 0.3rem 0.8rem; border-radius: 6px; cursor: pointer; }
+.mode-btn.active { background: #667eea; border-color: #667eea; color: #fff; }
+.legend { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.legend-chip { display: inline-flex; align-items: center; gap: 0.4rem; border: 1px solid #cbd5e0; background: transparent; color: inherit; padding: 0.25rem 0.7rem; border-radius: 999px; cursor: pointer; font-size: 0.85rem; }
+.legend-chip .dot { width: 0.8rem; height: 0.8rem; border-radius: 50%; }
+.legend-chip .n { opacity: 0.6; }
+.legend-chip.off { opacity: 0.4; text-decoration: line-through; }
 
 .apply-filters-btn, .reset-filters-btn {
     width: 100%;
