@@ -108,6 +108,18 @@
         $('resetFilters').addEventListener('click', resetFilters);
         $('exportBtn').addEventListener('click', exportCSV);
         $('themeToggle').addEventListener('click', toggleTheme);
+        $('legend').addEventListener('click', e => {
+            const chip = e.target.closest('.legend-chip');
+            if (!chip) return;
+            const set = hidden[mode];
+            set.has(chip.dataset.key) ? set.delete(chip.dataset.key) : set.add(chip.dataset.key);
+            applyFilters();
+        });
+        document.querySelectorAll('.mode-btn').forEach(b => b.addEventListener('click', () => {
+            mode = b.dataset.mode;
+            document.querySelectorAll('.mode-btn').forEach(x => x.classList.toggle('active', x === b));
+            applyFilters();
+        }));
         $('tramoSelect').addEventListener('change', () => { applyFilters(); zoomToSelected(); });
         $('historyRange').addEventListener('change', loadHistory);
 
@@ -119,9 +131,8 @@
     function applyFilters() {
         const sel = $('tramoSelect').value;
         const min = parseInt($('minIntensity').value, 10) || 0;
-        const states = Array.from(document.querySelectorAll('.checkbox-group input:checked')).map(c => c.value);
         base = all.filter(r =>
-            states.includes(r.state) &&
+            !hidden[mode].has(categoryOf(r)) &&
             (min === 0 || (r.imv !== null && r.imv >= min)));
         filtered = base.filter(r => sel === 'all' || r.id === sel);
         render();
@@ -130,7 +141,8 @@
     function resetFilters() {
         $('tramoSelect').value = 'all';
         $('minIntensity').value = 0;
-        document.querySelectorAll('.checkbox-group input').forEach(c => (c.checked = true));
+        hidden.intensidad.clear();
+        hidden.estado.clear();
         applyFilters();
         zoomToSelected();
     }
@@ -151,11 +163,12 @@
         renderKPIs();
         renderStatus();
         renderIntensity();
+        renderLegend();
         renderMap();
         renderTop();
         renderTable();
         renderStats();
-        renderHistory();
+        loadHistory();
     }
 
     function renderKPIs() {
@@ -205,10 +218,37 @@
         });
     }
 
+    const SCHEMES = {
+        intensidad: [
+            { key: 'baja', label: 'Baja (<1000)', color: '#2ecc71' },
+            { key: 'media', label: 'Media (1000-2000)', color: '#f1c40f' },
+            { key: 'alta', label: 'Alta (2000-4000)', color: '#e67e22' },
+            { key: 'muy alta', label: 'Muy alta (>4000)', color: '#e74c3c' },
+            { key: 'sin datos', label: 'Sin datos', color: CONFIG.colors['sin datos'] }
+        ],
+        estado: STATE_ORDER.map(k => ({ key: k, label: k[0].toUpperCase() + k.slice(1), color: CONFIG.colors[k] }))
+    };
+    let mode = 'intensidad';
+    const hidden = { intensidad: new Set(), estado: new Set() };
+
+    function categoryOf(r, m = mode) {
+        if (m === 'estado') return r.state;
+        if (r.imv === null) return 'sin datos';
+        return r.imv < 1000 ? 'baja' : r.imv < 2000 ? 'media' : r.imv < 4000 ? 'alta' : 'muy alta';
+    }
+
     function colorFor(r) {
-        if (r.imv === null) return CONFIG.colors['sin datos'];
-        if (r.state !== 'fluido') return CONFIG.colors[r.state];
-        return r.imv > 2000 ? '#e67e22' : r.imv > 1000 ? '#f1c40f' : CONFIG.colors.fluido;
+        return SCHEMES[mode].find(c => c.key === categoryOf(r)).color;
+    }
+
+    function renderLegend() {
+        const min = parseInt($('minIntensity').value, 10) || 0;
+        const pool = all.filter(r => min === 0 || (r.imv !== null && r.imv >= min));
+        $('legend').innerHTML = SCHEMES[mode].map(c => {
+            const n = pool.filter(r => categoryOf(r) === c.key).length;
+            return `<button type="button" class="legend-chip${hidden[mode].has(c.key) ? ' off' : ''}" data-key="${c.key}">` +
+                `<span class="dot" style="background:${c.color}"></span>${c.label} <span class="n">${n}</span></button>`;
+        }).join('');
     }
 
     function renderMap() {
@@ -275,7 +315,7 @@
 
 // La base SQLite solo existe cuando el dashboard corre en el contenedor.
 if (!location.hostname.endsWith('github.io')) {
-    fetch('data/trafico.db', { method: 'HEAD' }).then(r => {
-        if (r.ok) document.getElementById('dbLink').hidden = false;
+    fetch('api/health').then(r => r.json()).then(h => {
+        if (h.ok) document.getElementById('dbLink').hidden = false;
     }).catch(() => {});
 }

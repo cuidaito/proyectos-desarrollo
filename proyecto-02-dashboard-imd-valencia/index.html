@@ -54,17 +54,6 @@
                 <input type="number" id="minIntensity" class="filter-input" min="0" value="0">
             </div>
 
-            <div class="filter-group">
-                <label>Estado del Tráfico</label>
-                <div class="checkbox-group">
-                    <label><input type="checkbox" value="fluido" checked> Fluido</label>
-                    <label><input type="checkbox" value="denso" checked> Denso</label>
-                    <label><input type="checkbox" value="congestionado" checked> Congestionado</label>
-                    <label><input type="checkbox" value="cortado" checked> Cortado</label>
-                    <label><input type="checkbox" value="sin datos" checked> Sin datos</label>
-                </div>
-            </div>
-
             <button class="apply-filters-btn" id="applyFilters">Aplicar Filtros</button>
             <button class="reset-filters-btn" id="resetFilters">Limpiar</button>
         </aside>
@@ -121,6 +110,14 @@
             <!-- Map Section -->
             <section class="map-section">
                 <h2>Mapa de Intensidad en Tiempo Real - Valencia</h2>
+                <div class="map-controls">
+                    <div class="mode-switch" role="group" aria-label="Colorear por">
+                        <span>Colorear por:</span>
+                        <button type="button" class="mode-btn active" data-mode="intensidad">Intensidad</button>
+                        <button type="button" class="mode-btn" data-mode="estado">Estado</button>
+                    </div>
+                    <div class="legend" id="legend"></div>
+                </div>
                 <div id="map" class="map-container"></div>
             </section>
 
