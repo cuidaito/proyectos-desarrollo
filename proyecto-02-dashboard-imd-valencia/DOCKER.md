@@ -23,7 +23,7 @@ O con `docker-compose.yml` (usa las imágenes ya cargadas). Web en `http://HOST:
 
 Para actualizar la web: carga `trafico-web.tar`, borra y recrea solo `web`. `datos` sigue capturando.
 
-Si `datos` y `web` no comparten una red de Docker definida por el usuario, pon en `web` la variable `API_UPSTREAM=IP:PUERTO` del contenedor de datos.
+Con la red `bridge` por defecto de Docker no se resuelve el nombre `datos`: pon en `web` la variable `API_UPSTREAM=IP:8000` (IP del contenedor de datos) o crea una red propia como arriba.
 
 ## API (puerto 8000, con CORS abierto para otros dashboards)
 - `GET /api/health`
