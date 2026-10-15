@@ -13,7 +13,6 @@ URL = (
     "?where=1%3D1&outFields=idtramo,des_tramo,estado,imv&outSR=4326&resultRecordCount=2000&f=geojson"
 )
 DATA = Path(os.environ.get("DATA_DIR") or Path(__file__).resolve().parent.parent / "data")
-HISTORY = DATA / "history"
 
 
 def fetch():
@@ -27,26 +26,25 @@ def fetch():
     sys.exit("No se pudo descargar la capa de tráfico")
 
 
-def write(path, obj):
-    path.write_text(json.dumps(obj, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+def centroid(coords):
+    if not coords:
+        return None, None
+    mid = coords[len(coords) // 2]
+    return round(mid[1], 6), round(mid[0], 6)
 
 
-def save_sqlite(tramos, snapshot):
-    con = sqlite3.connect(DATA / "trafico.db")
-    with con:
-        con.execute("CREATE TABLE IF NOT EXISTS tramos (idtramo TEXT PRIMARY KEY, nombre TEXT)")
-        con.execute(
-            "CREATE TABLE IF NOT EXISTS lecturas (t TEXT, idtramo TEXT, imv INTEGER, estado INTEGER,"
-            " PRIMARY KEY (t, idtramo))"
-        )
-        con.executemany(
-            "INSERT OR REPLACE INTO tramos VALUES (?, ?)", [(k, v["n"]) for k, v in tramos.items()]
-        )
-        con.executemany(
-            "INSERT OR IGNORE INTO lecturas VALUES (?, ?, ?, ?)",
-            [(snapshot["t"], k, v[0], v[1]) for k, v in snapshot["v"].items()],
-        )
-    con.close()
+def init_db(con):
+    con.execute(
+        "CREATE TABLE IF NOT EXISTS tramos (idtramo TEXT PRIMARY KEY, nombre TEXT, lat REAL, lon REAL, geom TEXT)"
+    )
+    cols = {r[1] for r in con.execute("PRAGMA table_info(tramos)")}
+    for col, typ in (("lat", "REAL"), ("lon", "REAL"), ("geom", "TEXT")):
+        if col not in cols:
+            con.execute(f"ALTER TABLE tramos ADD COLUMN {col} {typ}")
+    con.execute(
+        "CREATE TABLE IF NOT EXISTS lecturas (t TEXT, idtramo TEXT, imv INTEGER, estado INTEGER,"
+        " PRIMARY KEY (t, idtramo))"
+    )
 
 
 def main():
@@ -66,29 +64,27 @@ def main():
             if geom and geom.get("type") == "LineString"
             else []
         )
-        tramos[tid] = {"n": p.get("des_tramo") or tid, "g": coords}
+        lat, lon = centroid(coords)
+        tramos[tid] = (p.get("des_tramo") or tid, lat, lon, json.dumps(coords, separators=(",", ":")))
         imv = p.get("imv")
         if imv and imv.isdigit():
             estado = int(p["estado"]) if (p.get("estado") or "").isdigit() and int(p["estado"]) <= 3 else 9
-            values[tid] = [int(imv), estado]
+            values[tid] = (int(imv), estado)
 
-    now = datetime.now(timezone.utc).replace(microsecond=0)
-    snapshot = {"t": now.isoformat().replace("+00:00", "Z"), "v": values}
+    now = datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
 
-    HISTORY.mkdir(parents=True, exist_ok=True)
-    write(DATA / "tramos.json", tramos)
-    write(DATA / "latest.json", snapshot)
-
-    day_file = HISTORY / f"{now:%Y-%m-%d}.json"
-    day = json.loads(day_file.read_text(encoding="utf-8")) if day_file.exists() else []
-    day.append(snapshot)
-    write(day_file, day)
-
-    save_sqlite(tramos, snapshot)
-
-    days = sorted(p.stem for p in HISTORY.glob("*.json"))
-    write(DATA / "index.json", days)
-    print(f"{snapshot['t']}: {len(values)} lecturas de {len(tramos)} tramos")
+    DATA.mkdir(parents=True, exist_ok=True)
+    con = sqlite3.connect(DATA / "trafico.db", timeout=30)
+    with con:
+        init_db(con)
+        con.executemany(
+            "INSERT OR REPLACE INTO tramos VALUES (?, ?, ?, ?, ?)", [(k, *v) for k, v in tramos.items()]
+        )
+        con.executemany(
+            "INSERT OR IGNORE INTO lecturas VALUES (?, ?, ?, ?)", [(now, k, v[0], v[1]) for k, v in values.items()]
+        )
+    con.close()
+    print(f"{now}: {len(values)} lecturas de {len(tramos)} tramos")
 
 
 if __name__ == "__main__":
